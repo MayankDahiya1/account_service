@@ -1,0 +1,64 @@
+# 📌 Directives
+
+# Rate limiting directive (e.g. 5 requests per minute)
+directive @rateLimit(
+  limit: Int!
+  duration: Int!
+  message: String
+) on FIELD_DEFINITION
+
+# Authorization directive for account types
+directive @accountAuth(accountType: String) on FIELD_DEFINITION
+
+# 📌 Types
+
+type Account {
+  id: ID!
+  email: String! @accountAuth(accountType: "ADMIN")
+  name: String
+  phone: String
+  profilePicture: String
+  role: String
+  createdAt: String!
+}
+
+# 📌 Login response type
+type LoginResponse {
+  token: String!
+  account: Account!
+}
+
+# 📌 Root Query
+
+type Query {
+  # 🔐 Admin-only: Get all accounts (with search and pagination)
+  AccountGetAll(limit: Int, search: String): [Account!]!
+    @accountAuth(accountType: "ADMIN")
+    @rateLimit(limit: 5, duration: 60)
+
+  # 🔐 User-only: Get own account by ID
+  AccountGetById(id: ID!): Account
+    @accountAuth(accountType: "USER")
+    @rateLimit(limit: 3, duration: 30)
+}
+
+# 📌 Root Mutation
+
+type Mutation {
+  # 🔐 Public: Create new account (limited to 2 per hour)
+  AccountCreate(
+    email: String!
+    password: String!
+    name: String!
+    phone: String!
+    profilePicture: String
+  ): Account!
+    @rateLimit(limit: 2, duration: 3600, message: "Account creation limited to 2 per hour")
+
+  # 🔐 Public: Login user and return JWT token
+  AccountLogin(
+    email: String!
+    password: String!
+  ): LoginResponse!
+    @rateLimit(limit: 5, duration: 60, message: "Too many login attempts. Try again later.")
+}
