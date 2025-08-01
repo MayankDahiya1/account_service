@@ -92,18 +92,12 @@ async function startServer() {
     cors: false // CORS already handled by express middleware
   });
 
-  const PORT = parseInt(process.env.PORT || "4000", 10);
-
-  app.listen(PORT, '0.0.0.0', () => { // Listen on all network interfaces
-    console.log(`
-    🚀 Server ready at http://localhost:${PORT}/graphql
-    🔥 Health check: http://localhost:${PORT}/health
-    💡 Try these fixes if Sandbox doesn't load:
-        1. Clear browser cache
-        2. Try incognito mode
-        3. Disable ad-blockers
-    `);
+  const PORT = process.env.PORT || 4000;
+  
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
   });
+  
 }
 
 startServer().catch(err => {
