@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,18 +8,35 @@ datasource db {
 }
 
 model Account {
-  id             String   @id @default(cuid())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  email          String   @unique
-  password       String
-  name           String
-  phone          String
-  role           ROLE     @default(CUSTOMER)
-  profilePicture String?
+  id        String         @id @unique @default(cuid())
+  name      String
+  email     String         @unique
+  password  String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  role      ROLE           @default(BARBER)
+  provider  PROVIDER       @default(LOCAL)
+  tokens    RefreshToken[]
+}
+
+model RefreshToken {
+  id            String   @id @unique @default(cuid())
+  token         String   @unique
+  device        String?
+  ip            String?
+  expiresAt     DateTime
+  Account__fk__ String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  Account       Account  @relation(fields: [Account__fk__], references: [id])
 }
 
 enum ROLE {
+  BARBER
   CUSTOMER
-  OWNER
+}
+
+enum PROVIDER {
+  LOCAL
+  GOOGLE
 }

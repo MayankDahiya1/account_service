@@ -1,6 +1,6 @@
-# 📌 Directives
+# Directives
 
-# Rate limiting directive (e.g. 5 requests per minute)
+# Rate limiting directive
 directive @rateLimit(
   limit: Int!
   duration: Int!
@@ -10,33 +10,40 @@ directive @rateLimit(
 # Authorization directive for account types
 directive @accountAuth(accountType: String) on FIELD_DEFINITION
 
-# 📌 Types
+# Types
 
 type Account {
-  id: ID!
-  email: String! @accountAuth(accountType: "ADMIN")
+  id: String
+  email: String
   name: String
-  phone: String
-  profilePicture: String
   role: String
-  createdAt: String!
+  createdAt: String
 }
 
-# 📌 Login response type
+# Login response type
 type LoginResponse {
-  token: String!
-  account: Account!
+  refreshToken: String
+  accessToken: String
+  status: String
+  message: String
+  Account: Account
 }
 
-# 📌 Root Query
+type AuthPayload {
+  accessToken: String
+  refreshToken: String
+  status: String
+  message: String
+}
 
+#Root Query
 type Query {
-  # 🔐 Admin-only: Get all accounts (with search and pagination)
+  # Get all accounts (with search and pagination)
   AccountGetAll(limit: Int, search: String): [Account!]!
     @accountAuth(accountType: "ADMIN")
     @rateLimit(limit: 5, duration: 60)
 
-  # 🔐 User-only: Get own account by ID
+  # Get own account by ID
   AccountGetById(id: ID!): Account
     @accountAuth(accountType: "USER")
     @rateLimit(limit: 3, duration: 30)
@@ -45,20 +52,27 @@ type Query {
 # 📌 Root Mutation
 
 type Mutation {
-  # 🔐 Public: Create new account (limited to 2 per hour)
-  AccountCreate(
-    email: String!
-    password: String!
-    name: String!
-    phone: String!
-    profilePicture: String
-  ): Account!
-    @rateLimit(limit: 2, duration: 3600, message: "Account creation limited to 2 per hour")
+  # Create new account
+  AccountCreate(email: String!, password: String!, name: String!): Account!
+    @rateLimit(
+      limit: 2
+      duration: 3600
+      message: "Too many login attempts. Try again later."
+    )
 
-  # 🔐 Public: Login user and return JWT token
-  AccountLogin(
-    email: String!
-    password: String!
-  ): LoginResponse!
-    @rateLimit(limit: 5, duration: 60, message: "Too many login attempts. Try again later.")
+  # Login user and return JWT token
+  AccountLogin(email: String!, password: String!): LoginResponse!
+    @rateLimit(
+      limit: 5
+      duration: 60
+      message: "Too many login attempts. Try again later."
+    )
+
+  AccountTokenGenerate(refreshToken: String!): AuthPayload!
+    @accountAuth
+    @rateLimit(
+      limit: 5
+      duration: 60
+      message: "Too many login attempts. Try again later."
+    )
 }

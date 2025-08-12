@@ -1,17 +1,24 @@
 /*
  * IMPORTS
  */
-import express, { Application } from 'express';
-import { ApolloServer } from 'apollo-server-express';
-import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
-import { makeExecutableSchema } from '@graphql-tools/schema';
-import { typeDefs } from './graphql/typeDefs';
-import { resolvers } from './graphql/resolvers';
-import { applyDirectives, getDirectiveTypeDefs } from './graphql/directives';
-import { verifyToken } from './utils/verifyToken';
-import { prisma } from './prisma/client';
-import cors from 'cors';
-import helmet from 'helmet';
+import express, { Application } from "express";
+import { ApolloServer } from "apollo-server-express";
+import { ApolloServerPluginLandingPageLocalDefault } from "apollo-server-core";
+import { makeExecutableSchema } from "@graphql-tools/schema";
+import { typeDefs } from "./graphql/typeDefs";
+import { resolvers } from "./graphql/resolvers";
+import { applyDirectives, getDirectiveTypeDefs } from "./graphql/directives";
+import { createContext } from "./context";
+import cors from "cors";
+import helmet from "helmet";
+import debug from "debug";
+
+/*
+ * DEBUG LOGGING
+ */
+const log = {
+  server: debug("app:server"),
+};
 
 /*
  * APP INITIALIZATION
@@ -19,30 +26,29 @@ import helmet from 'helmet';
 const app: Application = express();
 
 /*
- * SECURITY MIDDLEWARE (Modified for Apollo Sandbox)
+ * SECURITY MIDDLEWARE
  */
-// 1. Configure CORS first
-app.use(cors({
-  origin: true, // Allow all origins in development
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 
-// 2. Configure Helmet with relaxed CSP for development
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === "production") {
   app.use(helmet());
 } else {
-  // Development-specific CSP that allows Apollo Sandbox
   app.use(
     helmet({
-      contentSecurityPolicy: false, // Disable CSP for development
+      contentSecurityPolicy: false,
       crossOriginEmbedderPolicy: false,
-      crossOriginOpenerPolicy: false
+      crossOriginOpenerPolicy: false,
     })
   );
 }
 
 /*
- * GRAPHQL SCHEMA SETUP
+ * GRAPHQL SCHEMA
  */
 const schema = applyDirectives(
   makeExecutableSchema({
@@ -52,31 +58,24 @@ const schema = applyDirectives(
 );
 
 /*
- * APOLLO SERVER CONFIGURATION
+ * APOLLO SERVER
  */
 const server = new ApolloServer({
   schema,
-  context: ({ req }) => ({
-    prisma,
-    user: verifyToken(req.headers.authorization),
-    ip: req.headers['x-forwarded-for'] || req.ip
-  }),
-  plugins: [
-    // Force embedded playground in all environments
-    ApolloServerPluginLandingPageLocalDefault()
-  ],
-  introspection: true, // Always enable introspection
-  cache: 'bounded'
+  context: createContext,
+  plugins: [ApolloServerPluginLandingPageLocalDefault()],
+  introspection: true,
+  cache: "bounded",
 });
 
 /*
  * HEALTH CHECK ENDPOINT
  */
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy',
-    sandbox: 'http://localhost:4000/graphql',
-    timestamp: new Date().toISOString()
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    sandbox: "http://localhost:4000/graphql",
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -85,22 +84,12 @@ app.get('/health', (req, res) => {
  */
 async function startServer() {
   await server.start();
-  
-  server.applyMiddleware({ 
-    app,
-    path: '/graphql',
-    cors: false // CORS already handled by express middleware
-  });
-
+  server.applyMiddleware({ app, path: "/graphql", cors: false });
   const PORT = process.env.PORT || 4000;
-  
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-  
+  app.listen(PORT, () => log.server(`Server running on port ${PORT}`));
 }
 
-startServer().catch(err => {
-  console.error('🔥 Server failed to start:', err);
+startServer().catch((err) => {
+  log.server("Server failed to start:", err);
   process.exit(1);
 });

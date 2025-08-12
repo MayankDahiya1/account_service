@@ -1,53 +1,62 @@
 /*
  * IMPORTS
  */
-import { prisma } from "../../../../prisma/client";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { Context } from "../../../../context";
+import {
+  _GenerateAccessToken,
+  _GenerateRefreshToken,
+} from "../../../../utils/accounts";
 
-// Define expected login input
+/*
+ * TYPES
+ */
 interface LoginArgs {
   email: string;
   password: string;
 }
 
-// JWT
-const JWT_SECRET = process.env.JWT_SECRET!;
-
 /*
- * EXPORTS
+ * RESOLVER: Account Login
  */
-export async function AccountLogin(args: LoginArgs) {
-  // Look up user by email
-  const account = await prisma.account.findUnique({
+export async function AccountLogin(
+  _parent: unknown,
+  args: LoginArgs,
+  Context: Context
+) {
+  // Find account by email
+  const _Account = await Context.prisma.account.findUnique({
     where: { email: args.email },
   });
+  if (!_Account) throw new Error("Invalid email or password");
 
-  if (!account) {
-    throw new Error("Invalid email or password.");
-  }
+  // Compare password
+  const isMatch = await bcrypt.compare(args.password, _Account.password);
+  if (!isMatch) throw new Error("Invalid email or password");
 
-  // Compare passwords
-  const isMatch = await bcrypt.compare(args.password, account.password);
-  if (!isMatch) {
-    throw new Error("Invalid email or password.");
-  }
+  // Create JWT payload
+  const _Payload = { id: _Account.id, email: _Account.email };
 
-  // Generate JWT token
-  const token = jwt.sign({ userId: account.id }, JWT_SECRET, {
-    expiresIn: "7d",
-  });
+  // Generate tokens
+  const _AccessToken = _GenerateAccessToken(_Payload);
+  const _RefreshToken = await _GenerateRefreshToken(
+    _Account.id,
+    _Payload,
+    Context.device,
+    Context.ip as string
+  );
 
-  // Return token and basic user info (exclude password)
+  // Return tokens + account info
   return {
-    token,
-    account: {
-      id: account.id,
-      email: account.email,
-      name: account.name,
-      phone: account.phone,
-      profilePicture: account.profilePicture,
-      role: account.role,
+    status: "LOGGED_IN_SUCCESSFULLY",
+    message: "User logged in successfully",
+    accessToken: _AccessToken,
+    refreshToken: _RefreshToken,
+    Account: {
+      id: _Account.id,
+      email: _Account.email,
+      name: _Account.name,
+      role: _Account.role,
     },
   };
 }

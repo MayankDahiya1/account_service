@@ -1,64 +1,55 @@
 /*
  * IMPORTS
  */
-import { prisma } from "../../../../prisma/client";
+
+import { Context } from "../../../../context";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 
 interface CreateAccountArgs {
   email: string;
   password: string;
   name: string;
-  phone: string;
-  profilePicture?: string;
 }
-
-// Fallback JWT secret in case env is missing (not recommended for prod)
-const JWT_SECRET = process.env.JWT_SECRET || "your-default-secret";
 
 /*
   EXPORTS
  */
-export async function AccountCreate(args: CreateAccountArgs) {
+export async function AccountCreate(
+  _parent: unknown,
+  args: CreateAccountArgs,
+  Context: Context
+) {
   // Check if an account with the same email already exists
-  const existing = await prisma.account.findUnique({
+  const _Existing = await Context.prisma.account.findUnique({
     where: { email: args.email },
   });
 
-  if (existing) {
+  if (_Existing instanceof Error || _Existing) {
     throw new Error("An account with this email already exists.");
   }
 
   // Hash the user's password
-  const hashedPassword = await bcrypt.hash(args.password, 10);
+  const _HashedPassword = await bcrypt.hash(args.password, 10);
 
   // Store the new user in the database
-  const account = await prisma.account.create({
+  const _Account = await Context.prisma.account.create({
     data: {
       email: args.email,
-      password: hashedPassword,
+      password: _HashedPassword,
       name: args.name,
-      phone: args.phone,
-      profilePicture: args.profilePicture,
-      role: "OWNER", // You can later make this dynamic if needed
+      role: "BARBER",
     },
   });
 
-  // Generate a JWT token for the new user
-  const token = jwt.sign({ userId: account.id }, JWT_SECRET, {
-    expiresIn: "7d",
-  });
-
-  // Return the token and user data (excluding password)
+  // Return
   return {
-    token,
-    account: {
-      id: account.id,
-      email: account.email,
-      name: account.name,
-      phone: account.phone,
-      profilePicture: account.profilePicture,
-      role: account.role,
+    status: "REGISTERED_SUCCESSFULLY",
+    message: "Registered successfully",
+    Account: {
+      id: _Account.id,
+      email: _Account.email,
+      name: _Account.name,
+      role: _Account.role,
     },
   };
 }
