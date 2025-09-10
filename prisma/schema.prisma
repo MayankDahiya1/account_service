@@ -8,35 +8,43 @@ datasource db {
 }
 
 model Account {
-  id        String         @id @unique @default(cuid())
-  name      String
-  email     String         @unique
-  password  String
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  role      ROLE           @default(BARBER)
-  provider  PROVIDER       @default(LOCAL)
-  tokens    RefreshToken[]
+  id                   String       @id @default(cuid())
+  createdAt            DateTime     @default(now()) @db.Timestamp(6)
+  updatedAt            DateTime     @default(now()) @updatedAt @db.Timestamp(6)
+  fullName             String?
+  ban                  Boolean      @default(false)
+  accountType          ACCOUNT_TYPE
+  email                String?      @unique
+  profilePicture       String?
+  createAs             CREATE_AS    @default(ADMIN)
+  password             String
+  phone                String?
+  CreatorAccount       Account?     @relation("CreatorAccountRelation", fields: [CreatorAccount__fk__], references: [id])
+  CreatorAccount__fk__ String?
+  CreatorAccounts      Account[]    @relation("CreatorAccountRelation")
+
+  @@index([phone])
 }
 
-model RefreshToken {
-  id            String   @id @unique @default(cuid())
-  token         String   @unique
-  device        String?
-  ip            String?
-  expiresAt     DateTime
-  Account__fk__ String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  Account       Account  @relation(fields: [Account__fk__], references: [id])
+model Otp {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+  otp       String
+  phone     String
+  expiresAt DateTime
+  used      Boolean   @default(false)
+  role      CREATE_AS @default(ADMIN)
+
+  @@index([phone])
 }
 
-enum ROLE {
-  BARBER
-  CUSTOMER
+enum CREATE_AS {
+  SUPER_ADMIN
+  ADMIN
 }
 
-enum PROVIDER {
-  LOCAL
-  GOOGLE
+enum ACCOUNT_TYPE {
+  ACCOUNT_DEFAULT
+  ACCOUNT_ADMIN
 }

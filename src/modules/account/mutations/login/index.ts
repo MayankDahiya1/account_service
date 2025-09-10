@@ -28,17 +28,25 @@ export async function AccountLogin(
   const _Account = await Context.prisma.account.findUnique({
     where: { email: args.email },
   });
-  if (!_Account) throw new Error("Invalid email or password");
+
+  // If account not found, throw error
+  if (_Account instanceof Error || !_Account) {
+    throw new Error("Invalid email or password");
+  }
 
   // Compare password
   const isMatch = await bcrypt.compare(args.password, _Account.password);
+
+  // If password does not match, throw error
   if (!isMatch) throw new Error("Invalid email or password");
 
   // Create JWT payload
-  const _Payload = { id: _Account.id, email: _Account.email };
+  const _Payload = { id: _Account.id || "", email: _Account.email || "" };
 
   // Generate tokens
   const _AccessToken = _GenerateAccessToken(_Payload);
+
+  // Generate refresh token and store in DB
   const _RefreshToken = await _GenerateRefreshToken(
     _Account.id,
     _Payload,
@@ -52,11 +60,6 @@ export async function AccountLogin(
     message: "User logged in successfully",
     accessToken: _AccessToken,
     refreshToken: _RefreshToken,
-    Account: {
-      id: _Account.id,
-      email: _Account.email,
-      name: _Account.name,
-      role: _Account.role,
-    },
+    Account: _Account,
   };
 }

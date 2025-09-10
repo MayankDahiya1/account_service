@@ -32,9 +32,12 @@
     "express-rate-limit": "^8.0.1",
     "graphql": "^16.11.0",
     "graphql-rate-limit-directive": "^2.0.6",
+    "graphql-redis-subscriptions": "^2.7.0",
     "graphql-subscriptions": "^3.0.0",
     "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2"
+    "ioredis": "^5.7.0",
+    "jsonwebtoken": "^9.0.2",
+    "kafkajs": "^2.2.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

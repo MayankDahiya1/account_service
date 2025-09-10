@@ -1,5 +1,5 @@
-import { prisma } from '../../../../prisma/client';
-import { Prisma } from '@prisma/client'; // 👈 ye import add karo
+import { prisma } from "../../../../prisma/client";
+import { Prisma } from "@prisma/client"; // 👈 ye import add karo
 
 export async function AccountGetAll(
   _: any,
@@ -23,6 +23,6 @@ export async function AccountGetAll(
   return await prisma.account.findMany({
     where: whereClause,
     take: limit || undefined,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 }

@@ -36,10 +36,15 @@ export async function AccountCreate(
     data: {
       email: args.email,
       password: _HashedPassword,
-      name: args.name,
-      role: "BARBER",
+      fullName: args.name,
+      accountType: "ACCOUNT_DEFAULT",
     },
   });
+
+  // If error persists
+  if (_Account instanceof Error) {
+    throw new Error("Error creating account: " + _Account.message);
+  }
 
   // Return
   return {
@@ -48,8 +53,7 @@ export async function AccountCreate(
     Account: {
       id: _Account.id,
       email: _Account.email,
-      name: _Account.name,
-      role: _Account.role,
+      fullName: _Account.fullName,
     },
   };
 }

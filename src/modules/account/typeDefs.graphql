@@ -1,5 +1,3 @@
-# Directives
-
 # Rate limiting directive
 directive @rateLimit(
   limit: Int!
@@ -18,6 +16,10 @@ type Account {
   name: String
   role: String
   createdAt: String
+  updatedAt: String
+  password: String
+  message: String
+  status: String
 }
 
 # Login response type
@@ -36,7 +38,7 @@ type AuthPayload {
   message: String
 }
 
-#Root Query
+# Root Query
 type Query {
   # Get all accounts (with search and pagination)
   AccountGetAll(limit: Int, search: String): [Account!]!
@@ -49,7 +51,7 @@ type Query {
     @rateLimit(limit: 3, duration: 30)
 }
 
-# 📌 Root Mutation
+# Root Mutation
 
 type Mutation {
   # Create new account
@@ -68,7 +70,17 @@ type Mutation {
       message: "Too many login attempts. Try again later."
     )
 
+  # Token generation
   AccountTokenGenerate(refreshToken: String!): AuthPayload!
+    @accountAuth
+    @rateLimit(
+      limit: 5
+      duration: 60
+      message: "Too many login attempts. Try again later."
+    )
+
+  # Account delte
+  AccountDelete: Account
     @accountAuth
     @rateLimit(
       limit: 5

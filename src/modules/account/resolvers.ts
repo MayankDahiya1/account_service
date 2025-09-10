@@ -6,6 +6,7 @@ import { AccountGetById } from "./queries/getById";
 import { AccountCreate } from "./mutations/create";
 import { AccountLogin } from "./mutations/login/index";
 import { AccountTokenGenerate } from "./mutations/token";
+import { AccountDelete } from "./mutations/delete";
 
 /*
  * EXPORTS
@@ -19,5 +20,6 @@ export const accountResolvers = {
     AccountCreate,
     AccountLogin,
     AccountTokenGenerate,
+    AccountDelete,
   },
 };
