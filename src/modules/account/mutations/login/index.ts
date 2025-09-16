@@ -54,12 +54,17 @@ export async function AccountLogin(
     Context.ip as string
   );
 
+  console.log();
+
   // Return tokens + account info
   return {
     status: "LOGGED_IN_SUCCESSFULLY",
     message: "User logged in successfully",
     accessToken: _AccessToken,
     refreshToken: _RefreshToken,
-    Account: _Account,
+    Account: {
+      ..._Account,
+      name: _Account.fullName,
+    },
   };
 }

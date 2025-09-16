@@ -1,5 +1,3 @@
-import { accountResolvers } from '../modules/account/resolvers';
+import { accountResolvers } from "../modules/account/resolvers";
 
-export const resolvers = [
-  accountResolvers,
-];
+export const resolvers = [accountResolvers];

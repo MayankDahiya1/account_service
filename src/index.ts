@@ -97,7 +97,7 @@ _App.get("/health", (_req, res) => {
  */
 async function startServer() {
   await server.start();
-  server.applyMiddleware({ app: _App, path: "/v1/graphql", cors: false });
+  server.applyMiddleware({ app: _App, path: "/graphql", cors: false });
 
   const PORT = process.env.PORT || 4000;
   const httpServer = http.createServer(_App);
