@@ -97,7 +97,7 @@ export async function AccountTokenGenerate(
       device,
       ip: Array.isArray(ip) ? ip[0] : ip,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      Account__fk__: id,
+      Account__fk__: id || "",
     },
   });
 
