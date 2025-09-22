@@ -8,16 +8,18 @@ import { Context } from "../../../../context";
  * TYPES
  */
 interface JWTPayload {
-  id: string;
-  email: string;
+  refreshToken: string;
+  email?: string;
+  id?: string;
 }
 
 /*
- * FUNCTION: Refresh Token Handler for GraphQL
+ * RESOLVER: Account Token Generate
  */
 export async function AccountTokenGenerate(
-  refreshToken: string,
-  ctx: Context
+  _parent: unknown,
+  args: JWTPayload,
+  Context: Context
 ): Promise<{
   accessToken: string;
   refreshToken: string;
@@ -25,8 +27,9 @@ export async function AccountTokenGenerate(
   message: string;
 }> {
   // Device and IP for more security
-  const device = ctx.device || "unknown";
-  const ip = ctx.ip;
+  const device = Context.device || "unknown";
+  const ip = Context.ip;
+  let refreshToken = args.refreshToken;
 
   // If not present
   if (!refreshToken) {
@@ -34,7 +37,7 @@ export async function AccountTokenGenerate(
   }
 
   // Check if token exists in DB
-  const storedToken = await ctx.prisma.refreshToken.findUnique({
+  const storedToken = await Context.prisma.refreshToken.findUnique({
     where: { token: refreshToken },
   });
 
@@ -58,16 +61,27 @@ export async function AccountTokenGenerate(
     throw new Error("Refresh token expired");
   }
 
+  console.log(userData, "refreshed");
+
   const { id, email } = userData;
 
   // Delete old refresh token
-  await ctx.prisma.refreshToken.delete({ where: { token: refreshToken } });
+  const _Delete = await Context.prisma.refreshToken.delete({
+    where: { token: refreshToken },
+  });
+
+  console.log(_Delete, "deleted");
+
+  // If deletion fails
+  if (_Delete instanceof Error) {
+    throw new Error("Failed to delete old refresh token");
+  }
 
   // Generate new tokens
   const _NewAccessToken = jwt.sign(
     { id, email },
     process.env.JWT_SECRET || "jwt_secret",
-    { expiresIn: "5m" }
+    { expiresIn: "1h" }
   );
 
   const _NewRefreshToken = jwt.sign(
@@ -76,8 +90,8 @@ export async function AccountTokenGenerate(
     { expiresIn: "7d" }
   );
 
-  // 6️⃣ Save new refresh token
-  await ctx.prisma.refreshToken.create({
+  // Save new refresh token
+  const _RefreshToken = await Context.prisma.refreshToken.create({
     data: {
       token: _NewRefreshToken,
       device,
@@ -86,6 +100,12 @@ export async function AccountTokenGenerate(
       Account__fk__: id,
     },
   });
+
+  console.log(_RefreshToken, "stored");
+
+  if (_RefreshToken instanceof Error) {
+    throw new Error("Failed to store new refresh token");
+  }
 
   return {
     accessToken: _NewAccessToken,

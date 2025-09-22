@@ -1,5 +1,18 @@
-import { prisma } from '../../../../prisma/client';
+/*
+ * IMPORTS
+ */
+import { prisma } from "../../../../prisma/client";
 
-export async function AccountGetById(_: any, args: { id: string }) {
+/*
+ * TYPES
+ */
+interface GetByIdArgs {
+  id: string;
+}
+
+/*
+ * RESOLVER: Account Get By ID
+ */
+export async function AccountGetById(_parent: unknown, args: GetByIdArgs) {
   return prisma.account.findUnique({ where: { id: args.id } });
 }

@@ -72,7 +72,6 @@ type Mutation {
 
   # Token generation
   AccountTokenGenerate(refreshToken: String!): AuthPayload!
-    @accountAuth
     @rateLimit(
       limit: 5
       duration: 60

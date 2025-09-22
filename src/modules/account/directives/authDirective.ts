@@ -5,25 +5,32 @@ import {
   defaultFieldResolver,
   GraphQLSchema,
   GraphQLFieldConfig,
-} from 'graphql';
-import { mapSchema, getDirective, MapperKind } from '@graphql-tools/utils';
+} from "graphql";
+import { mapSchema, getDirective, MapperKind } from "@graphql-tools/utils";
 
+/*
+ * TYPES
+ */
 interface AuthDirectiveArgs {
   accountType?: string;
 }
 
 /*
- * EXPORTS
+ * DIRECTIVE: Account Authentication
  */
 export function accountAuthDirective(
   schema: GraphQLSchema,
-  directiveName = 'accountAuth'
+  directiveName = "accountAuth"
 ) {
   return mapSchema(schema, {
     [MapperKind.OBJECT_FIELD]: (
       fieldConfig: GraphQLFieldConfig<any, any>
     ): GraphQLFieldConfig<any, any> => {
-      const directive = getDirective(schema, fieldConfig, directiveName)?.[0] as AuthDirectiveArgs;
+      const directive = getDirective(
+        schema,
+        fieldConfig,
+        directiveName
+      )?.[0] as AuthDirectiveArgs;
       if (!directive) return fieldConfig;
 
       const { resolve = defaultFieldResolver } = fieldConfig;
@@ -33,11 +40,11 @@ export function accountAuthDirective(
         const user = context.user;
 
         // Authentication check
-        if (!user) throw new Error('REQUIRE__LOGIN');
+        if (!user) throw new Error("REQUIRE__LOGIN");
 
         // Authorization check
         if (accountType && user.role !== accountType) {
-          throw new Error('ACCOUNT__AUTHORIZATION__FAILED');
+          throw new Error("ACCOUNT__AUTHORIZATION__FAILED");
         }
 
         return resolve(source, args, context, info);

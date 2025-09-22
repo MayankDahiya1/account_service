@@ -1,10 +1,12 @@
 /*
  * IMPORTS
  */
-
 import { Context } from "../../../../context";
 import bcrypt from "bcryptjs";
 
+/*
+ * TYPES
+ */
 interface CreateAccountArgs {
   email: string;
   password: string;
@@ -12,7 +14,7 @@ interface CreateAccountArgs {
 }
 
 /*
-  EXPORTS
+ * RESOLVER: Account Create
  */
 export async function AccountCreate(
   _parent: unknown,

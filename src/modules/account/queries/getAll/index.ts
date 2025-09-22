@@ -1,19 +1,30 @@
+/*
+ * IMPORTS
+ */
 import { prisma } from "../../../../prisma/client";
-import { Prisma } from "@prisma/client"; // 👈 ye import add karo
+import { Prisma } from "@prisma/client";
 
-export async function AccountGetAll(
-  _: any,
-  args: { limit?: number; search?: string }
-) {
+/*
+ * TYPES
+ */
+interface GetAllArgs {
+  limit?: number;
+  search?: string;
+}
+
+/*
+ * RESOLVER: Account Get All
+ */
+export async function AccountGetAll(_parent: unknown, args: GetAllArgs) {
   const { limit, search } = args;
 
-  const whereClause: Prisma.AccountWhereInput = search
+  const _WhereClause: Prisma.AccountWhereInput = search
     ? {
         OR: [
           {
             email: {
               contains: search,
-              mode: Prisma.QueryMode.insensitive, // 👈 yahan enum use karo
+              mode: Prisma.QueryMode.insensitive,
             },
           },
         ],
@@ -21,7 +32,7 @@ export async function AccountGetAll(
     : {};
 
   return await prisma.account.findMany({
-    where: whereClause,
+    where: _WhereClause,
     take: limit || undefined,
     orderBy: { createdAt: "desc" },
   });

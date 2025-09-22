@@ -34,7 +34,7 @@ if (!JWT_SECRET || !REFRESH_SECRET) {
  * FUNCTION: Generate Access Token
  */
 export function _GenerateAccessToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "5m" });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "2h" });
 }
 
 /*

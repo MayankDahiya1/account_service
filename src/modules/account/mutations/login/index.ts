@@ -54,8 +54,6 @@ export async function AccountLogin(
     Context.ip as string
   );
 
-  console.log();
-
   // Return tokens + account info
   return {
     status: "LOGGED_IN_SUCCESSFULLY",

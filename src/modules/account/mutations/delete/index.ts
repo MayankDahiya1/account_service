@@ -5,7 +5,7 @@ import { Context } from "../../../../context";
 import { producer as _Producer } from "../../../../kafka/kafkaClient";
 
 /*
- * EXPORTS
+ * RESOLVER: Account Delete
  */
 export async function AccountDelete(
   _parent: unknown,

@@ -1,5 +1,5 @@
 /*
- * IMPORT
+ * IMPORTS
  */
 import { Request } from "express";
 import { PrismaClient } from "@prisma/client";
@@ -15,7 +15,7 @@ import debug from "debug";
 /*
  * DEBUG LOGGING
  */
-const log = {
+const _Log = {
   context: debug("app:context"),
   db: debug("app:db"),
 };
@@ -58,15 +58,15 @@ const verifyToken = (token?: string): JwtUserPayload | null => {
       token,
       process.env.JWT_SECRET!
     ) as JwtUserPayload;
-    log.context("Token verified", decoded.id);
+    _Log.context("Token verified", decoded.id);
     return decoded;
   } catch (err) {
     if (err instanceof TokenExpiredError) {
-      log.context("Token expired");
+      _Log.context("Token expired");
     } else if (err instanceof JsonWebTokenError) {
-      log.context("Invalid token");
+      _Log.context("Invalid token");
     } else {
-      log.context("Token verification failed", err);
+      _Log.context("Token verification failed", err);
     }
     return null;
   }
@@ -87,24 +87,24 @@ export interface Context {
  * CREATE CONTEXT FUNCTION
  */
 export const createContext = ({ req }: { req: Request }): Context => {
-  log.context("Creating context for request");
-
-  // IP extraction
   const ipHeader = req.headers["x-forwarded-for"] as string | undefined;
-  const ip = ipHeader?.split(",")[0] || req.socket.remoteAddress || "unknown";
+  const ip = ipHeader?.split(",")[0] || req.socket.remoteAddress;
 
-  // Token extraction from Authorization header
+  const device = req.headers["user-agent"];
+
   const authHeader = req.headers.authorization || "";
   const token = authHeader.startsWith("Bearer ")
     ? authHeader.replace("Bearer ", "")
     : undefined;
+
+  console.log("🔑 Context User:", token ? "found" : "null", ip, device);
 
   return {
     prisma,
     pubsub,
     user: verifyToken(token),
     ip,
-    device: req.headers["user-agent"] || "unknown",
+    device,
   };
 };
 
@@ -112,9 +112,9 @@ export const createContext = ({ req }: { req: Request }): Context => {
  * GRACEFUL SHUTDOWN
  */
 export const shutdownContext = async () => {
-  log.db("Disconnecting Prisma...");
+  _Log.db("Disconnecting Prisma...");
   await prisma.$disconnect();
-  log.db("Shutting down Redis...");
+  _Log.db("Shutting down Redis...");
   await (pubsub as any).publisher.quit();
   await (pubsub as any).subscriber.quit();
 };
