@@ -6,7 +6,8 @@ on:
 
 jobs:
   build-deploy:
-    runs-on: self-hosted # 👈 Server me GitHub runner chalega
+    runs-on: self-hosted
+    environment: production
     steps:
       - uses: actions/checkout@v3
 
@@ -21,8 +22,14 @@ jobs:
 
       - name: Restart container on server
         run: |
-          docker stop account_service || true
-          docker rm account_service || true
+          if [ "$(docker ps -q -f name=account_service)" ]; then
+            echo "🔄 Restarting existing container..."
+            docker stop account_service
+            docker rm account_service
+          else
+            echo "🚀 No existing container, creating new one..."
+          fi
+
           docker run -d --name account_service \
             -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
             -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
