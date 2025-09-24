@@ -1,4 +1,7 @@
+version: "3.9"
+
 services:
+  # Kafka infra
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
     container_name: zookeeper
@@ -18,5 +21,40 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  # Account microservice
+  account_service:
+    build: ./account_service
+    container_name: account_service
+    env_file:
+      - ./account_service/.env
+    ports:
+      - "4001:4001"
+    depends_on:
+      - kafka
+
+  # Chat microservice
+  chat_service:
+    build: ./chat_service
+    container_name: chat_service
+    env_file:
+      - ./chat_service/.env
+    ports:
+      - "4002:4002"
+    depends_on:
+      - kafka
+      - account_service
+
+  # Gateway microservice
+  gateway_service:
+    build: ./gateway_service
+    container_name: gateway_service
+    env_file:
+      - ./gateway_service/.env
+    ports:
+      - "4000:4000"
+    depends_on:
+      - account_service
+      - chat_service

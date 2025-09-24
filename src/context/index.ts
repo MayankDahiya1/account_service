@@ -103,8 +103,8 @@ export const createContext = ({ req }: { req: Request }): Context => {
     prisma,
     pubsub,
     user: verifyToken(token),
-    ip,
-    device,
+    ip: ip || "",
+    device: device || "",
   };
 };
 
