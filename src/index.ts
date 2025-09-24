@@ -18,6 +18,8 @@ import debug from "debug";
 import http from "http";
 import { initKafka, shutdownKafka } from "./kafka/kafkaClient";
 
+// Testing
+
 /*
  * DEBUG LOGGING
  */
