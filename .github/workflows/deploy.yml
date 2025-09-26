@@ -9,19 +9,43 @@ jobs:
     runs-on: self-hosted
     environment: production
     steps:
+      # 1. Checkout code
       - uses: actions/checkout@v3
 
+      # 2. DockerHub Login
       - name: Log in to DockerHub
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
+      # 3. Debug Secrets (optional - for testing)
+      - name: Debug Secrets Length
+        run: |
+          echo "DockerHub Username length: ${#DOCKERHUB_USERNAME}"
+          echo "PORT: ${PORT}"
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          PORT: ${{ secrets.PORT }}
+
+      # 4. Build Docker image
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/account_service:latest .
+        run: |
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/account_service:latest"
+          echo "Building Docker image: $IMAGE_NAME"
+          docker build -t "$IMAGE_NAME" .
 
+      # 5. Push Docker image
       - name: Push Docker image
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/account_service:latest
+        run: |
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/account_service:latest"
+          echo "Pushing Docker image: $IMAGE_NAME"
+          docker push "$IMAGE_NAME"
 
+      # 6. Restart container on server
       - name: Restart container on server
         run: |
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/account_service:latest"
+          PORT=${{ secrets.PORT }}
+
+          # Stop & remove old container if exists
           if [ "$(docker ps -q -f name=account_service)" ]; then
             echo "🔄 Restarting existing container..."
             docker stop account_service
@@ -30,16 +54,19 @@ jobs:
             echo "🚀 No existing container, creating new one..."
           fi
 
+          echo "Using image: $IMAGE_NAME on port: $PORT"
+
+          # Run new container in the correct network
           docker run -d --name account_service \
-            --network microservices-infra_default \  
-            -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
-            -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-            -e REFRESH_SECRET=${{ secrets.REFRESH_SECRET }} \
-            -e NODE_ENV=${{ secrets.NODE_ENV }} \
-            -e KAFKA_BROKER=${{ secrets.KAFKA_BROKER }} \
-            -e GATEWAY_URL=${{ secrets.GATEWAY_URL }} \
-            -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
-            -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
-            -e PORT=${{ secrets.PORT }} \
-            -p ${{ secrets.PORT }}:${{ secrets.PORT }} \
-            ${{ secrets.DOCKERHUB_USERNAME }}/account_service:latest
+            --network microservices-infra_default \
+            -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            -e REFRESH_SECRET="${{ secrets.REFRESH_SECRET }}" \
+            -e NODE_ENV="${{ secrets.NODE_ENV }}" \
+            -e KAFKA_BROKER="kafka:9092" \
+            -e GATEWAY_URL="${{ secrets.GATEWAY_URL }}" \
+            -e REDIS_HOST="redis" \
+            -e REDIS_PORT="6379" \
+            -e PORT="$PORT" \
+            -p "$PORT:$PORT" \
+            "$IMAGE_NAME"
