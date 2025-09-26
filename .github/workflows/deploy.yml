@@ -31,14 +31,15 @@ jobs:
           fi
 
           docker run -d --name account_service \
+            --network microservices-infra_default \    # 🔹 Auto connect network
             -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
             -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
             -e REFRESH_SECRET=${{ secrets.REFRESH_SECRET }} \
             -e NODE_ENV=${{ secrets.NODE_ENV }} \
-            -e KAFKA_BROKER=${{ secrets.KAFKA_BROKER }} \
+            -e KAFKA_BROKER=kafka:9092 \               # 🔹 Kafka container name use karo
             -e GATEWAY_URL=${{ secrets.GATEWAY_URL }} \
-            -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
-            -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
+            -e REDIS_HOST=redis \                      # 🔹 Redis container name use karo
+            -e REDIS_PORT=6379 \                       # 🔹 Direct port use karo
             -e PORT=${{ secrets.PORT }} \
             -p ${{ secrets.PORT }}:${{ secrets.PORT }} \
             ${{ secrets.DOCKERHUB_USERNAME }}/account_service:latest
